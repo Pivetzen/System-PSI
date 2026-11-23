@@ -52,7 +52,7 @@
     }
 
     .header-inner {
-      max-width: 960px;
+      max-width: 980px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
@@ -82,12 +82,13 @@
     .user-area {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-size: 0.85rem;
     }
 
     .user-info {
       text-align: right;
+      margin-right: 4px;
     }
 
     .user-info strong {
@@ -102,9 +103,9 @@
 
     /* CONTAINER */
     .container {
-      max-width: 960px;
+      max-width: 980px;
       margin: 24px auto;
-      padding: 0 16px 48px;
+      padding: 0 16px 56px;
     }
 
     /* CARDS & FORMS */
@@ -154,6 +155,17 @@
       margin-bottom: 14px;
     }
 
+    .form-divider {
+      margin: 18px 0 14px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--primary);
+    }
+
     label {
       display: block;
       font-size: 0.82rem;
@@ -189,8 +201,14 @@
       gap: 12px;
     }
 
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 12px;
+    }
+
     @media (max-width: 640px) {
-      .grid-2 { grid-template-columns: 1fr; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .user-info { display: none; }
     }
 
@@ -243,6 +261,11 @@
       color: #fff;
     }
 
+    .btn-warning {
+      background: var(--warning);
+      color: #fff;
+    }
+
     .btn-sm {
       padding: 6px 10px;
       font-size: 0.8rem;
@@ -278,6 +301,12 @@
     .badge-pendente { background: var(--warning-light); color: var(--warning); }
     .badge-aprovado { background: var(--success-light); color: var(--success); }
     .badge-bloqueado { background: var(--danger-light); color: var(--danger); }
+    .badge-ativo { background: var(--success-light); color: var(--success); }
+    .badge-substituido {
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
 
     /* LIST ITEMS */
     .item-row {
@@ -307,6 +336,16 @@
       margin-top: 2px;
     }
 
+    .fiscal-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.83rem;
+      color: #334155;
+      margin-bottom: 18px;
+    }
+
     .actions {
       display: flex;
       gap: 8px;
@@ -323,6 +362,18 @@
       margin-bottom: 12px;
     }
 
+    .record-box.substituido {
+      background: #fef2f2;
+      border-color: #fecaca;
+      border-left: 4px solid var(--danger);
+      opacity: 0.85;
+    }
+
+    .record-box.substituido .record-text {
+      text-decoration: line-through;
+      color: #7f1d1d;
+    }
+
     .record-date {
       font-size: 0.78rem;
       font-weight: 700;
@@ -330,12 +381,32 @@
       margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .record-box.substituido .record-date {
+      color: var(--danger);
     }
 
     .record-text {
       white-space: pre-wrap;
       font-size: 0.92rem;
       color: #1e293b;
+    }
+
+    .record-footer {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(100, 116, 139, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: var(--muted);
     }
 
     .section-header {
@@ -361,15 +432,18 @@
       justify-content: center;
       padding: 16px;
       z-index: 50;
+      overflow-y: auto;
     }
 
     .modal-card {
       background: #fff;
       border-radius: var(--radius);
-      max-width: 480px;
+      max-width: 560px;
       width: 100%;
       padding: 20px;
       box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     /* PRINT STYLES */
@@ -395,6 +469,9 @@
           <strong id="headerUserName">Usuário</strong>
           <span id="headerUserSpec">Especialidade</span>
         </div>
+        <button id="syncBtn" class="btn btn-outline btn-sm" onclick="handleSync()" title="Sincronizar dados">
+          ↻ Atualizar
+        </button>
         <button class="btn btn-outline btn-sm" onclick="handleLogout()">Sair</button>
       </div>
     </div>
@@ -487,7 +564,6 @@
       <div class="card">
         <div class="section-header">
           <h2>Solicitações e Profissionais</h2>
-          <button class="btn btn-outline btn-sm" onclick="loadAdminData()">Atualizar</button>
         </div>
         <div id="profissionaisList">Carregando...</div>
       </div>
@@ -534,7 +610,7 @@
           <button class="btn btn-primary btn-sm" onclick="openNewPacienteModal()">+ Novo Paciente</button>
         </div>
         <div class="alert alert-info">
-          Por sigilo profissional e ética clínica, o administrador visualiza apenas os dados cadastrais e vínculos, sem acesso ao conteúdo dos prontuários.
+          Por sigilo profissional e ética clínica, o administrador visualiza dados cadastrais, fiscais e vínculos, sem acesso ao conteúdo dos prontuários.
         </div>
         <div id="adminPacientesList">Carregando...</div>
       </div>
@@ -564,9 +640,13 @@
           <button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / Salvar PDF</button>
         </div>
 
-        <div style="border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px;">
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px;">
           <h2 id="prontuarioPacienteNome" style="color: var(--primary); font-size: 1.3rem;">Paciente</h2>
           <p id="prontuarioPacienteInfo" class="item-sub">Dados do paciente</p>
+        </div>
+
+        <div id="prontuarioFiscalBox" class="fiscal-box">
+          Dados fiscais / Nota Fiscal do paciente
         </div>
 
         <!-- NOVO RELATÓRIO -->
@@ -590,7 +670,7 @@
     </section>
   </main>
 
-  <!-- MODAL: CADASTRAR NOVO PACIENTE -->
+  <!-- MODAL: CADASTRAR NOVO PACIENTE (COM DADOS FISCAIS / NF) -->
   <div id="pacienteModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="section-header">
@@ -600,29 +680,114 @@
       <form onsubmit="handleCreatePaciente(event)">
         <div class="form-group">
           <label>Nome Completo do Paciente *</label>
-          <input type="text" id="pacNome" required placeholder="Nome completo" />
+          <input type="text" id="pacNome" required placeholder="Nome completo sem abreviações" />
         </div>
+
         <div class="grid-2">
+          <div class="form-group">
+            <label>CPF do Paciente *</label>
+            <input type="text" id="pacCpf" required placeholder="000.000.000-00" />
+          </div>
           <div class="form-group">
             <label>Data de Nascimento</label>
             <input type="date" id="pacNascimento" />
           </div>
+        </div>
+
+        <div class="grid-2">
           <div class="form-group">
             <label>Telefone / WhatsApp</label>
             <input type="text" id="pacTelefone" placeholder="(85) 99999-9999" />
           </div>
+          <div class="form-group">
+            <label>E-mail (para envio de NF)</label>
+            <input type="email" id="pacEmail" placeholder="paciente@email.com" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>Responsável (se menor de idade)</label>
-          <input type="text" id="pacResponsavel" placeholder="Nome do pai, mãe ou responsável" />
+
+        <div class="form-divider">Responsável Financeiro / Legal (se aplicável)</div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Nome do Responsável</label>
+            <input type="text" id="pacResponsavel" placeholder="Nome completo do responsável" />
+          </div>
+          <div class="form-group">
+            <label>CPF do Responsável</label>
+            <input type="text" id="pacCpfResponsavel" placeholder="000.000.000-00" />
+          </div>
         </div>
+
+        <div class="form-divider">Endereço Completo (Nota Fiscal)</div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>CEP *</label>
+            <input type="text" id="pacCep" required placeholder="60000-000" />
+          </div>
+          <div class="form-group">
+            <label>Bairro *</label>
+            <input type="text" id="pacBairro" required placeholder="Ex: Aldeota" />
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label>Logradouro (Rua / Av.) *</label>
+            <input type="text" id="pacLogradouro" required placeholder="Ex: Av. Dom Luís" />
+          </div>
+          <div class="form-group">
+            <label>Número *</label>
+            <input type="text" id="pacNumero" required placeholder="1234" />
+          </div>
+          <div class="form-group">
+            <label>Complemento</label>
+            <input type="text" id="pacComplemento" placeholder="Apto 502" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Cidade *</label>
+            <input type="text" id="pacCidade" required placeholder="Ex: Fortaleza" />
+          </div>
+          <div class="form-group">
+            <label>Estado (UF) *</label>
+            <input type="text" id="pacEstado" maxlength="2" required placeholder="CE" style="text-transform: uppercase;" />
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Observações Administrativas</label>
-          <input type="text" id="pacObs" placeholder="Ex: Convênio, turno preferencial..." />
+          <input type="text" id="pacObs" placeholder="Ex: Emissão de NF em nome do responsável..." />
         </div>
+
         <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
           <button type="button" class="btn btn-outline" onclick="closeNewPacienteModal()">Cancelar</button>
           <button type="submit" id="savePacBtn" class="btn btn-primary">Salvar Paciente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SUBSTITUIR RELATÓRIO -->
+  <div id="substituirModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="section-header">
+        <h2>Substituir Relatório</h2>
+        <button class="btn btn-outline btn-sm" onclick="closeSubstituirModal()">✕</button>
+      </div>
+      <div class="alert alert-warning" style="font-size: 0.82rem;">
+        O relatório anterior <strong>não será apagado</strong>: ele permanecerá no histórico marcado como <strong>[SUBSTITUÍDO / CANCELADO]</strong> e este novo texto passará a valer como relatório ativo.
+      </div>
+      <form onsubmit="handleConfirmSubstituir(event)">
+        <div class="form-group">
+          <label>Novo Texto do Relatório *</label>
+          <textarea id="novoRelatorioSubstituto" required placeholder="Digite o novo relatório que substituirá o anterior..."></textarea>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
+          <button type="button" class="btn btn-outline" onclick="closeSubstituirModal()">Cancelar</button>
+          <button type="submit" id="confirmSubstituirBtn" class="btn btn-warning">Confirmar Substituição</button>
         </div>
       </form>
     </div>
@@ -640,6 +805,7 @@
     let allPacientes = [];
     let allVinculos = [];
     let selectedPaciente = null;
+    let prontuarioParaSubstituir = null;
 
     // INICIALIZAÇÃO
     window.addEventListener('DOMContentLoaded', async () => {
@@ -655,6 +821,36 @@
       el.textContent = msg;
       el.classList.remove('hidden');
       setTimeout(() => el.classList.add('hidden'), 6000);
+    }
+
+    // BOTÃO DE SINCRONIZAÇÃO NO CABEÇALHO
+    async function handleSync() {
+      if (!currentProfile) return;
+      const btn = document.getElementById('syncBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '↻ Sincronizando...';
+
+      try {
+        if (currentProfile.role === 'ADMIN') {
+          await loadAdminData();
+          showAlert('adminAlert', 'Dados sincronizados com o banco.', 'info');
+        } else {
+          await loadProfData();
+          if (selectedPaciente) {
+            const atualizado = (await sb.from('pacientes').select('*').eq('id', selectedPaciente.id).single()).data;
+            if (atualizado) {
+              selectedPaciente = atualizado;
+              renderProntuarioHeader(atualizado);
+            }
+            await loadProntuariosHistory();
+          }
+          showAlert('profAlert', 'Dados sincronizados com o banco.', 'info');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
 
     // AUTH TABS
@@ -709,7 +905,7 @@
       const email = document.getElementById('signupEmail').value.trim();
       const password = document.getElementById('signupPassword').value;
 
-      const { data, error } = await sb.auth.signUp({
+      const { error } = await sb.auth.signUp({
         email,
         password,
         options: {
@@ -781,6 +977,7 @@
       await sb.auth.signOut();
       currentUser = null;
       currentProfile = null;
+      selectedPaciente = null;
       document.getElementById('appHeader').classList.add('hidden');
       document.getElementById('adminView').classList.add('hidden');
       document.getElementById('profView').classList.add('hidden');
@@ -939,10 +1136,12 @@
         return `
           <div class="item-row">
             <div>
-              <div class="item-title">${escapeHtml(pac.nome)}</div>
+              <div class="item-title">${escapeHtml(pac.nome)} ${pac.cpf ? `• CPF: ${escapeHtml(pac.cpf)}` : ''}</div>
               <div class="item-sub">
-                Tel: ${escapeHtml(pac.telefone || '-')} • Resp: ${escapeHtml(pac.responsavel || '-')}
-                <br/>Cadastrado por: ${escapeHtml(criador ? criador.nome : 'Sistema')} •
+                ${formatFiscalSummary(pac)}
+              </div>
+              <div class="item-sub">
+                Cadastrado por: ${escapeHtml(criador ? criador.nome : 'Sistema')} •
                 Vínculos: <strong>${nomesProfs.length ? escapeHtml(nomesProfs.join(', ')) : 'Nenhum (aguardando vínculo)'}</strong>
               </div>
             </div>
@@ -979,6 +1178,7 @@
           <div>
             <div class="item-title">${escapeHtml(pac.nome)}</div>
             <div class="item-sub">
+              ${pac.cpf ? `CPF: ${escapeHtml(pac.cpf)} • ` : ''}
               Nasc: ${pac.data_nascimento ? formatDate(pac.data_nascimento) : '-'} •
               Tel: ${escapeHtml(pac.telefone || '-')}
               ${pac.responsavel ? ' • Resp: ' + escapeHtml(pac.responsavel) : ''}
@@ -991,14 +1191,20 @@
       `).join('');
     }
 
+    function renderProntuarioHeader(paciente) {
+      document.getElementById('prontuarioPacienteNome').textContent = paciente.nome;
+      document.getElementById('prontuarioPacienteInfo').textContent =
+        `Nascimento: ${paciente.data_nascimento ? formatDate(paciente.data_nascimento) : 'Não informada'} | Telefone: ${paciente.telefone || '-'} | E-mail: ${paciente.email || '-'}`;
+      document.getElementById('prontuarioFiscalBox').innerHTML =
+        `<strong>Dados para Nota Fiscal:</strong><br/>${formatFiscalSummary(paciente)}`;
+    }
+
     async function openProntuario(paciente) {
       selectedPaciente = paciente;
       document.getElementById('profPacientesSection').classList.add('hidden');
       document.getElementById('prontuarioSection').classList.remove('hidden');
 
-      document.getElementById('prontuarioPacienteNome').textContent = paciente.nome;
-      document.getElementById('prontuarioPacienteInfo').textContent =
-        `Nascimento: ${paciente.data_nascimento ? formatDate(paciente.data_nascimento) : 'Não informada'} | Telefone: ${paciente.telefone || '-'} | Responsável: ${paciente.responsavel || '-'}`;
+      renderProntuarioHeader(paciente);
 
       // Define data/hora atual no input
       const now = new Date();
@@ -1022,7 +1228,8 @@
         .from('prontuarios')
         .select('*')
         .eq('paciente_id', selectedPaciente.id)
-        .order('data_atendimento', { ascending: false });
+        .order('data_atendimento', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) {
         container.innerHTML = '<p class="alert alert-danger">Erro ao carregar evoluções.</p>';
@@ -1034,15 +1241,33 @@
         return;
       }
 
-      container.innerHTML = data.map(item => `
-        <div class="record-box">
-          <div class="record-date">
-            <span>Atendimento em ${formatDateTime(item.data_atendimento)}</span>
-            <span>${escapeHtml(currentProfile.nome)}</span>
+      container.innerHTML = data.map(item => {
+        const isSubstituido = item.status === 'SUBSTITUIDO';
+        return `
+          <div class="record-box ${isSubstituido ? 'substituido' : ''}">
+            <div class="record-date">
+              <span>Atendimento em ${formatDateTime(item.data_atendimento)}</span>
+              ${
+                isSubstituido
+                  ? `<span class="badge badge-substituido">[SUBSTITUÍDO / CANCELADO]</span>`
+                  : `<span class="badge badge-ativo">[ATIVO]</span>`
+              }
+            </div>
+            <div class="record-text">${escapeHtml(item.relatorio)}</div>
+            <div class="record-footer no-print">
+              <span>
+                Registrado por ${escapeHtml(currentProfile.nome)}
+                ${isSubstituido && item.substituido_em ? ` • Substituído em ${formatDateTime(item.substituido_em)}` : ''}
+              </span>
+              ${
+                !isSubstituido
+                  ? `<button type="button" class="btn btn-outline btn-sm" onclick='openSubstituirModal(${JSON.stringify(item)})'>Substituir Relatório</button>`
+                  : ''
+              }
+            </div>
           </div>
-          <div class="record-text">${escapeHtml(item.relatorio)}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     async function handleSaveProntuario(e) {
@@ -1060,7 +1285,8 @@
         paciente_id: selectedPaciente.id,
         profissional_id: currentUser.id,
         data_atendimento,
-        relatorio
+        relatorio,
+        status: 'ATIVO'
       });
 
       btn.disabled = false;
@@ -1073,6 +1299,70 @@
 
       document.getElementById('atendimentoRelatorio').value = '';
       showAlert('profAlert', 'Evolução registrada no prontuário!', 'success');
+      await loadProntuariosHistory();
+    }
+
+    // SUBSTITUIÇÃO DE RELATÓRIO (PRESERVANDO O ANTERIOR COM TARJA)
+    function openSubstituirModal(prontuarioItem) {
+      prontuarioParaSubstituir = prontuarioItem;
+      document.getElementById('novoRelatorioSubstituto').value = prontuarioItem.relatorio;
+      document.getElementById('substituirModal').classList.remove('hidden');
+    }
+
+    function closeSubstituirModal() {
+      prontuarioParaSubstituir = null;
+      document.getElementById('substituirModal').classList.add('hidden');
+    }
+
+    async function handleConfirmSubstituir(e) {
+      e.preventDefault();
+      if (!prontuarioParaSubstituir || !selectedPaciente) return;
+
+      const btn = document.getElementById('confirmSubstituirBtn');
+      btn.disabled = true;
+      btn.textContent = 'Substituindo...';
+
+      const novoTexto = document.getElementById('novoRelatorioSubstituto').value.trim();
+      const agoraIso = new Date().toISOString();
+
+      // 1. Marca o relatório antigo como SUBSTITUÍDO (mantendo o texto original)
+      const { error: updateErr } = await sb
+        .from('prontuarios')
+        .update({
+          status: 'SUBSTITUIDO',
+          substituido_em: agoraIso
+        })
+        .eq('id', prontuarioParaSubstituir.id);
+
+      if (updateErr) {
+        btn.disabled = false;
+        btn.textContent = 'Confirmar Substituição';
+        showAlert('profAlert', 'Erro ao marcar relatório anterior como substituído: ' + updateErr.message, 'danger');
+        return;
+      }
+
+      // 2. Insere o novo relatório ATIVO mantendo a data de atendimento original
+      const { error: insertErr } = await sb
+        .from('prontuarios')
+        .insert({
+          paciente_id: selectedPaciente.id,
+          profissional_id: currentUser.id,
+          data_atendimento: prontuarioParaSubstituir.data_atendimento,
+          relatorio: novoTexto,
+          status: 'ATIVO'
+        });
+
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Substituição';
+
+      if (insertErr) {
+        showAlert('profAlert', 'Relatório anterior marcado como substituído, mas houve erro ao salvar o novo: ' + insertErr.message, 'danger');
+        await loadProntuariosHistory();
+        return;
+      }
+
+      closeSubstituirModal();
+      showAlert('profAlert', 'Relatório substituído! O anterior ficou registrado com tarja [SUBSTITUÍDO / CANCELADO].', 'success');
       await loadProntuariosHistory();
     }
 
@@ -1094,9 +1384,19 @@
 
       const payload = {
         nome: document.getElementById('pacNome').value.trim(),
+        cpf: document.getElementById('pacCpf').value.trim() || null,
         data_nascimento: document.getElementById('pacNascimento').value || null,
         telefone: document.getElementById('pacTelefone').value.trim() || null,
+        email: document.getElementById('pacEmail').value.trim() || null,
         responsavel: document.getElementById('pacResponsavel').value.trim() || null,
+        cpf_responsavel: document.getElementById('pacCpfResponsavel').value.trim() || null,
+        cep: document.getElementById('pacCep').value.trim() || null,
+        bairro: document.getElementById('pacBairro').value.trim() || null,
+        logradouro: document.getElementById('pacLogradouro').value.trim() || null,
+        numero: document.getElementById('pacNumero').value.trim() || null,
+        complemento: document.getElementById('pacComplemento').value.trim() || null,
+        cidade: document.getElementById('pacCidade').value.trim() || null,
+        estado: (document.getElementById('pacEstado').value.trim() || '').toUpperCase() || null,
         observacoes: document.getElementById('pacObs').value.trim() || null,
         cadastrado_por: currentUser.id
       };
@@ -1115,7 +1415,7 @@
       closeNewPacienteModal();
 
       if (currentProfile.role === 'ADMIN') {
-        showAlert('adminAlert', 'Paciente cadastrado! Agora você pode vinculá-lo a um profissional na aba Vínculos.', 'success');
+        showAlert('adminAlert', 'Paciente cadastrado com dados fiscais! Agora você pode vinculá-lo a um profissional na aba Vínculos.', 'success');
         await loadAdminData();
       } else {
         showAlert('profAlert', 'Paciente cadastrado com sucesso! O administrador precisa vincular este paciente ao seu perfil para que ele apareça na sua lista.', 'warning');
@@ -1124,6 +1424,25 @@
     }
 
     // HELPERS
+    function formatFiscalSummary(pac) {
+      const parts = [];
+      if (pac.cpf) parts.push(`<strong>CPF Paciente:</strong> ${escapeHtml(pac.cpf)}`);
+      if (pac.responsavel || pac.cpf_responsavel) {
+        parts.push(`<strong>Responsável:</strong> ${escapeHtml(pac.responsavel || '-')} ${pac.cpf_responsavel ? `(CPF: ${escapeHtml(pac.cpf_responsavel)})` : ''}`);
+      }
+      const endereco = [
+        pac.logradouro ? `${pac.logradouro}${pac.numero ? ', ' + pac.numero : ''}` : '',
+        pac.complemento || '',
+        pac.bairro || '',
+        pac.cidade ? `${pac.cidade}${pac.estado ? '/' + pac.estado : ''}` : '',
+        pac.cep ? `CEP: ${pac.cep}` : ''
+      ].filter(Boolean).join(' - ');
+      if (endereco) parts.push(`<strong>Endereço:</strong> ${escapeHtml(endereco)}`);
+      if (pac.email) parts.push(`<strong>E-mail NF:</strong> ${escapeHtml(pac.email)}`);
+      if (pac.observacoes) parts.push(`<strong>Obs:</strong> ${escapeHtml(pac.observacoes)}`);
+      return parts.length ? parts.join(' • ') : 'Dados fiscais não preenchidos';
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)

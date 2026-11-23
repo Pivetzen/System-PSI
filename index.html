@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sistema PSI — Gestão Clínica & Prontuários</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --primary-light: #f0fdfa;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .hidden { display: none !important; }
+
+    /* HEADER */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .brand-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid #ccfbf1;
+    }
+
+    .user-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .user-info {
+      text-align: right;
+    }
+
+    .user-info strong {
+      display: block;
+      color: var(--text);
+    }
+
+    .user-info span {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    /* CONTAINER */
+    .container {
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 0 16px 48px;
+    }
+
+    /* CARDS & FORMS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .auth-wrapper {
+      max-width: 440px;
+      margin: 48px auto;
+      padding: 0 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: 0.15s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px; /* Evita zoom automático no iOS */
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .user-info { display: none; }
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: #f1f5f9;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    /* ALERTS & BADGES */
+    .alert {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      border: 1px solid transparent;
+    }
+
+    .alert-info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .alert-warning { background: var(--warning-light); color: #92400e; border-color: #fde68a; }
+    .alert-danger { background: var(--danger-light); color: #991b1b; border-color: #fecaca; }
+    .alert-success { background: var(--success-light); color: #166534; border-color: #bbf7d0; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-pendente { background: var(--warning-light); color: var(--warning); }
+    .badge-aprovado { background: var(--success-light); color: var(--success); }
+    .badge-bloqueado { background: var(--danger-light); color: var(--danger); }
+
+    /* LIST ITEMS */
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .item-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: var(--text);
+    }
+
+    .item-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* PRONTUARIO TIMELINE */
+    .record-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .record-date {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .record-text {
+      white-space: pre-wrap;
+      font-size: 0.92rem;
+      color: #1e293b;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-header h2 {
+      font-size: 1.15rem;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-card {
+      background: #fff;
+      border-radius: var(--radius);
+      max-width: 480px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      header, .no-print, .btn, .tabs { display: none !important; }
+      body { background: #fff; }
+      .card { box-shadow: none; border: none; padding: 0; }
+      .record-box { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER (Visível após login) -->
+  <header id="appHeader" class="hidden">
+    <div class="header-inner">
+      <div class="brand">
+        <span>Sistema PSI</span>
+        <span id="roleBadge" class="brand-badge">...</span>
+      </div>
+      <div class="user-area">
+        <div class="user-info">
+          <strong id="headerUserName">Usuário</strong>
+          <span id="headerUserSpec">Especialidade</span>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="handleLogout()">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TELA 1: LOGIN E CADASTRO -->
+  <div id="authView" class="auth-wrapper">
+    <div class="card">
+      <div style="text-align: center; margin-bottom: 18px;">
+        <h1 style="font-size: 1.4rem; color: var(--primary);">Sistema PSI</h1>
+        <p style="font-size: 0.85rem; color: var(--muted);">Gestão de Atendimentos & Prontuários</p>
+      </div>
+
+      <div class="tabs" style="justify-content: center;">
+        <button id="tabLoginBtn" class="tab-btn active" onclick="switchAuthTab('login')">Entrar</button>
+        <button id="tabSignupBtn" class="tab-btn" onclick="switchAuthTab('signup')">Solicitar Acesso</button>
+      </div>
+
+      <div id="authAlert" class="alert hidden"></div>
+
+      <!-- FORM LOGIN -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="loginEmail" required placeholder="seu@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" />
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">Entrar no Sistema</button>
+      </form>
+
+      <!-- FORM CADASTRO PROFISSIONAL -->
+      <form id="signupForm" class="hidden" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Nome Completo</label>
+          <input type="text" id="signupNome" required placeholder="Ex: Dra. Ana Souza" />
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Especialidade</label>
+            <select id="signupEspecialidade" required>
+              <option value="">Selecione...</option>
+              <option value="Psicologia">Psicologia</option>
+              <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+              <option value="Fonoaudiologia">Fonoaudiologia</option>
+              <option value="Psicopedagogia">Psicopedagogia</option>
+              <option value="Fisioterapia">Fisioterapia</option>
+              <option value="Nutrição">Nutrição</option>
+              <option value="Outra">Outra Especialidade</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Registro Profissional</label>
+            <input type="text" id="signupRegistro" required placeholder="Ex: CRP 11/12345" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="signupEmail" required placeholder="profissional@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Senha (mín. 6 caracteres)</label>
+          <input type="password" id="signupPassword" minlength="6" required placeholder="Crie uma senha" />
+        </div>
+        <button type="submit" id="signupSubmitBtn" class="btn btn-primary btn-block">Solicitar Cadastro</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TELA 2: PAINEL DO ADMINISTRADOR -->
+  <main id="adminView" class="container hidden">
+    <div class="tabs">
+      <button class="tab-btn active" id="adminTabAprovacoes" onclick="switchAdminTab('aprovacoes')">
+        Profissionais (<span id="pendingCount">0</span> pendentes)
+      </button>
+      <button class="tab-btn" id="adminTabVinculos" onclick="switchAdminTab('vinculos')">
+        Vínculos Paciente ↔ Profissional
+      </button>
+      <button class="tab-btn" id="adminTabPacientes" onclick="switchAdminTab('pacientes')">
+        Pacientes Cadastrados
+      </button>
+    </div>
+
+    <div id="adminAlert" class="alert hidden"></div>
+
+    <!-- ABA 1: APROVAÇÕES DE PROFISSIONAIS -->
+    <section id="adminSectionAprovacoes">
+      <div class="card">
+        <div class="section-header">
+          <h2>Solicitações e Profissionais</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadAdminData()">Atualizar</button>
+        </div>
+        <div id="profissionaisList">Carregando...</div>
+      </div>
+    </section>
+
+    <!-- ABA 2: VÍNCULOS -->
+    <section id="adminSectionVinculos" class="hidden">
+      <div class="card">
+        <div class="section-header">
+          <h2>Criar Novo Vínculo</h2>
+        </div>
+        <form onsubmit="handleCreateVinculo(event)">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Paciente</label>
+              <select id="vinculoPacienteSelect" required>
+                <option value="">Selecione um paciente...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Profissional Aprovado</label>
+              <select id="vinculoProfissionalSelect" required>
+                <option value="">Selecione um profissional...</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Vincular Paciente ao Profissional</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2>Vínculos Ativos</h2>
+        </div>
+        <div id="vinculosList">Carregando...</div>
+      </div>
+    </section>
+
+    <!-- ABA 3: PACIENTES (ADMIN) -->
+    <section id="adminSectionPacientes" class="hidden">
+      <div class="card">
+        <div class="section-header">
+          <h2>Todos os Pacientes</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewPacienteModal()">+ Novo Paciente</button>
+        </div>
+        <div class="alert alert-info">
+          Por sigilo profissional e ética clínica, o administrador visualiza apenas os dados cadastrais e vínculos, sem acesso ao conteúdo dos prontuários.
+        </div>
+        <div id="adminPacientesList">Carregando...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- TELA 3: PAINEL DO PROFISSIONAL -->
+  <main id="profView" class="container hidden">
+    <div id="profAlert" class="alert hidden"></div>
+
+    <!-- LISTA DE PACIENTES DO PROFISSIONAL -->
+    <section id="profPacientesSection">
+      <div class="card">
+        <div class="section-header">
+          <h2>Meus Pacientes Vinculados</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewPacienteModal()">+ Cadastrar Paciente</button>
+        </div>
+        <div id="profPacientesList">Carregando...</div>
+      </div>
+    </section>
+
+    <!-- PRONTUÁRIO DO PACIENTE SELECIONADO -->
+    <section id="prontuarioSection" class="hidden">
+      <div class="card">
+        <div class="section-header no-print">
+          <button class="btn btn-outline btn-sm" onclick="closeProntuario()">← Voltar aos Pacientes</button>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">Imprimir / Salvar PDF</button>
+        </div>
+
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px;">
+          <h2 id="prontuarioPacienteNome" style="color: var(--primary); font-size: 1.3rem;">Paciente</h2>
+          <p id="prontuarioPacienteInfo" class="item-sub">Dados do paciente</p>
+        </div>
+
+        <!-- NOVO RELATÓRIO -->
+        <form onsubmit="handleSaveProntuario(event)" class="no-print" style="margin-bottom: 24px;">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Data e Hora do Atendimento</label>
+              <input type="datetime-local" id="atendimentoData" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Evolução / Relatório do Atendimento</label>
+            <textarea id="atendimentoRelatorio" required placeholder="Descreva a evolução clínica, condutas e observações da sessão..."></textarea>
+          </div>
+          <button type="submit" id="saveProntuarioBtn" class="btn btn-primary">Registrar Atendimento</button>
+        </form>
+
+        <h3 style="font-size: 1rem; margin-bottom: 12px;">Histórico de Evoluções</h3>
+        <div id="prontuariosTimeline">Carregando histórico...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: CADASTRAR NOVO PACIENTE -->
+  <div id="pacienteModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="section-header">
+        <h2>Cadastrar Paciente</h2>
+        <button class="btn btn-outline btn-sm" onclick="closeNewPacienteModal()">✕</button>
+      </div>
+      <form onsubmit="handleCreatePaciente(event)">
+        <div class="form-group">
+          <label>Nome Completo do Paciente *</label>
+          <input type="text" id="pacNome" required placeholder="Nome completo" />
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Data de Nascimento</label>
+            <input type="date" id="pacNascimento" />
+          </div>
+          <div class="form-group">
+            <label>Telefone / WhatsApp</label>
+            <input type="text" id="pacTelefone" placeholder="(85) 99999-9999" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Responsável (se menor de idade)</label>
+          <input type="text" id="pacResponsavel" placeholder="Nome do pai, mãe ou responsável" />
+        </div>
+        <div class="form-group">
+          <label>Observações Administrativas</label>
+          <input type="text" id="pacObs" placeholder="Ex: Convênio, turno preferencial..." />
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          <button type="button" class="btn btn-outline" onclick="closeNewPacienteModal()">Cancelar</button>
+          <button type="submit" id="savePacBtn" class="btn btn-primary">Salvar Paciente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURAÇÃO SUPABASE
+    const SUPABASE_URL = 'https://vagszolifmsrlpcevnjy.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Q_Ax-E29aVEZAQJLfXt8WA_X-MDoV3x';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let currentProfile = null;
+    let allProfiles = [];
+    let allPacientes = [];
+    let allVinculos = [];
+    let selectedPaciente = null;
+
+    // INICIALIZAÇÃO
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        await checkUserAndRoute(session.user);
+      }
+    });
+
+    function showAlert(elId, msg, type = 'info') {
+      const el = document.getElementById(elId);
+      el.className = `alert alert-${type}`;
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 6000);
+    }
+
+    // AUTH TABS
+    function switchAuthTab(tab) {
+      document.getElementById('authAlert').classList.add('hidden');
+      if (tab === 'login') {
+        document.getElementById('tabLoginBtn').classList.add('active');
+        document.getElementById('tabSignupBtn').classList.remove('active');
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('signupForm').classList.add('hidden');
+      } else {
+        document.getElementById('tabSignupBtn').classList.add('active');
+        document.getElementById('tabLoginBtn').classList.remove('active');
+        document.getElementById('signupForm').classList.remove('hidden');
+        document.getElementById('loginForm').classList.add('hidden');
+      }
+    }
+
+    // LOGIN
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+      btn.disabled = false;
+      btn.textContent = 'Entrar no Sistema';
+
+      if (error) {
+        showAlert('authAlert', 'E-mail ou senha inválidos.', 'danger');
+        return;
+      }
+
+      await checkUserAndRoute(data.user);
+    }
+
+    // CADASTRO PROFISSIONAL
+    async function handleSignup(e) {
+      e.preventDefault();
+      const btn = document.getElementById('signupSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      const nome = document.getElementById('signupNome').value.trim();
+      const especialidade = document.getElementById('signupEspecialidade').value;
+      const registro_conselho = document.getElementById('signupRegistro').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { nome, especialidade, registro_conselho }
+        }
+      });
+
+      btn.disabled = false;
+      btn.textContent = 'Solicitar Cadastro';
+
+      if (error) {
+        showAlert('authAlert', 'Erro ao cadastrar: ' + error.message, 'danger');
+        return;
+      }
+
+      await sb.auth.signOut();
+      document.getElementById('signupForm').reset();
+      switchAuthTab('login');
+      showAlert('authAlert', 'Cadastro realizado! Seu acesso está "Aguardando aprovação" pelo administrador.', 'warning');
+    }
+
+    // VERIFICA PERFIL E STATUS APÓS LOGIN
+    async function checkUserAndRoute(user) {
+      currentUser = user;
+      const { data: profile, error } = await sb
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !profile) {
+        await sb.auth.signOut();
+        showAlert('authAlert', 'Perfil não encontrado. Contate o administrador.', 'danger');
+        return;
+      }
+
+      if (profile.status === 'PENDENTE') {
+        await sb.auth.signOut();
+        showAlert('authAlert', 'Seu cadastro ainda está aguardando aprovação do administrador.', 'warning');
+        return;
+      }
+
+      if (profile.status === 'BLOQUEADO') {
+        await sb.auth.signOut();
+        showAlert('authAlert', 'Seu acesso foi bloqueado pelo administrador.', 'danger');
+        return;
+      }
+
+      currentProfile = profile;
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('appHeader').classList.remove('hidden');
+      document.getElementById('headerUserName').textContent = profile.nome;
+      document.getElementById('headerUserSpec').textContent =
+        profile.role === 'ADMIN' ? 'Administrador' : `${profile.especialidade || ''} • ${profile.registro_conselho || ''}`;
+      document.getElementById('roleBadge').textContent = profile.role;
+
+      if (profile.role === 'ADMIN') {
+        document.getElementById('adminView').classList.remove('hidden');
+        document.getElementById('profView').classList.add('hidden');
+        await loadAdminData();
+      } else {
+        document.getElementById('profView').classList.remove('hidden');
+        document.getElementById('adminView').classList.add('hidden');
+        await loadProfData();
+      }
+    }
+
+    async function handleLogout() {
+      await sb.auth.signOut();
+      currentUser = null;
+      currentProfile = null;
+      document.getElementById('appHeader').classList.add('hidden');
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('profView').classList.add('hidden');
+      document.getElementById('authView').classList.remove('hidden');
+    }
+
+    // ==================== FUNÇÕES DO ADMIN ====================
+
+    function switchAdminTab(tab) {
+      ['aprovacoes', 'vinculos', 'pacientes'].forEach(t => {
+        const btn = document.getElementById('adminTab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const sec = document.getElementById('adminSection' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          btn.classList.add('active');
+          sec.classList.remove('hidden');
+        } else {
+          btn.classList.remove('active');
+          sec.classList.add('hidden');
+        }
+      });
+    }
+
+    async function loadAdminData() {
+      const [profRes, pacRes, vincRes] = await Promise.all([
+        sb.from('profiles').select('*').order('created_at', { ascending: false }),
+        sb.from('pacientes').select('*').order('nome', { ascending: true }),
+        sb.from('vinculos').select('*').order('created_at', { ascending: false })
+      ]);
+
+      allProfiles = profRes.data || [];
+      allPacientes = pacRes.data || [];
+      allVinculos = vincRes.data || [];
+
+      renderAdminProfissionais();
+      renderAdminVinculos();
+      renderAdminPacientes();
+    }
+
+    function renderAdminProfissionais() {
+      const profs = allProfiles.filter(p => p.role !== 'ADMIN');
+      const pendentes = profs.filter(p => p.status === 'PENDENTE');
+      document.getElementById('pendingCount').textContent = pendentes.length;
+
+      const container = document.getElementById('profissionaisList');
+      if (profs.length === 0) {
+        container.innerHTML = '<p class="item-sub">Nenhum profissional cadastrado ainda.</p>';
+        return;
+      }
+
+      container.innerHTML = profs.map(p => `
+        <div class="item-row">
+          <div>
+            <div class="item-title">
+              ${escapeHtml(p.nome)}
+              <span class="badge badge-${p.status.toLowerCase()}">${p.status}</span>
+            </div>
+            <div class="item-sub">
+              ${escapeHtml(p.especialidade || 'Sem especialidade')} • Reg: ${escapeHtml(p.registro_conselho || '-')} • ${escapeHtml(p.email)}
+            </div>
+          </div>
+          <div class="actions">
+            ${p.status !== 'APROVADO' ? `<button class="btn btn-success btn-sm" onclick="updateProfStatus('${p.id}', 'APROVADO')">Aprovar</button>` : ''}
+            ${p.status !== 'BLOQUEADO' ? `<button class="btn btn-danger btn-sm" onclick="updateProfStatus('${p.id}', 'BLOQUEADO')">Bloquear</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function updateProfStatus(id, status) {
+      const { error } = await sb.from('profiles').update({ status }).eq('id', id);
+      if (error) {
+        showAlert('adminAlert', 'Erro ao atualizar status: ' + error.message, 'danger');
+        return;
+      }
+      showAlert('adminAlert', `Status atualizado para ${status}.`, 'success');
+      await loadAdminData();
+    }
+
+    function renderAdminVinculos() {
+      const pacSelect = document.getElementById('vinculoPacienteSelect');
+      const profSelect = document.getElementById('vinculoProfissionalSelect');
+
+      pacSelect.innerHTML = '<option value="">Selecione um paciente...</option>' +
+        allPacientes.map(p => `<option value="${p.id}">${escapeHtml(p.nome)}</option>`).join('');
+
+      const aprovados = allProfiles.filter(p => p.role === 'PROFISSIONAL' && p.status === 'APROVADO');
+      profSelect.innerHTML = '<option value="">Selecione um profissional...</option>' +
+        aprovados.map(p => `<option value="${p.id}">${escapeHtml(p.nome)} (${escapeHtml(p.especialidade || '')})</option>`).join('');
+
+      const list = document.getElementById('vinculosList');
+      if (allVinculos.length === 0) {
+        list.innerHTML = '<p class="item-sub">Nenhum vínculo ativo no momento.</p>';
+        return;
+      }
+
+      list.innerHTML = allVinculos.map(v => {
+        const pac = allPacientes.find(p => p.id === v.paciente_id);
+        const prof = allProfiles.find(p => p.id === v.profissional_id);
+        return `
+          <div class="item-row">
+            <div>
+              <div class="item-title">${escapeHtml(pac ? pac.nome : 'Paciente removido')}</div>
+              <div class="item-sub">Atendido por: <strong>${escapeHtml(prof ? prof.nome : 'Profissional')}</strong> (${escapeHtml(prof?.especialidade || '')})</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="deleteVinculo('${v.id}')">Remover Vínculo</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleCreateVinculo(e) {
+      e.preventDefault();
+      const paciente_id = document.getElementById('vinculoPacienteSelect').value;
+      const profissional_id = document.getElementById('vinculoProfissionalSelect').value;
+
+      const { error } = await sb.from('vinculos').insert({ paciente_id, profissional_id });
+      if (error) {
+        if (error.code === '23505') {
+          showAlert('adminAlert', 'Este paciente já está vinculado a este profissional.', 'warning');
+        } else {
+          showAlert('adminAlert', 'Erro ao vincular: ' + error.message, 'danger');
+        }
+        return;
+      }
+
+      showAlert('adminAlert', 'Vínculo criado com sucesso!', 'success');
+      await loadAdminData();
+    }
+
+    async function deleteVinculo(id) {
+      if (!confirm('Deseja realmente remover este vínculo?')) return;
+      const { error } = await sb.from('vinculos').delete().eq('id', id);
+      if (error) {
+        showAlert('adminAlert', 'Erro ao remover vínculo.', 'danger');
+        return;
+      }
+      showAlert('adminAlert', 'Vínculo removido.', 'info');
+      await loadAdminData();
+    }
+
+    function renderAdminPacientes() {
+      const list = document.getElementById('adminPacientesList');
+      if (allPacientes.length === 0) {
+        list.innerHTML = '<p class="item-sub">Nenhum paciente cadastrado.</p>';
+        return;
+      }
+
+      list.innerHTML = allPacientes.map(pac => {
+        const criador = allProfiles.find(p => p.id === pac.cadastrado_por);
+        const vincs = allVinculos.filter(v => v.paciente_id === pac.id);
+        const nomesProfs = vincs.map(v => {
+          const pr = allProfiles.find(p => p.id === v.profissional_id);
+          return pr ? pr.nome : '';
+        }).filter(Boolean);
+
+        return `
+          <div class="item-row">
+            <div>
+              <div class="item-title">${escapeHtml(pac.nome)}</div>
+              <div class="item-sub">
+                Tel: ${escapeHtml(pac.telefone || '-')} • Resp: ${escapeHtml(pac.responsavel || '-')}
+                <br/>Cadastrado por: ${escapeHtml(criador ? criador.nome : 'Sistema')} •
+                Vínculos: <strong>${nomesProfs.length ? escapeHtml(nomesProfs.join(', ')) : 'Nenhum (aguardando vínculo)'}</strong>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==================== FUNÇÕES DO PROFISSIONAL ====================
+
+    async function loadProfData() {
+      const { data, error } = await sb
+        .from('pacientes')
+        .select('*')
+        .order('nome', { ascending: true });
+
+      if (error) {
+        showAlert('profAlert', 'Erro ao carregar pacientes: ' + error.message, 'danger');
+        return;
+      }
+
+      const list = document.getElementById('profPacientesList');
+      if (!data || data.length === 0) {
+        list.innerHTML = `
+          <div class="alert alert-info" style="margin-bottom:0;">
+            Você ainda não possui pacientes vinculados. Caso tenha acabado de cadastrar um paciente, aguarde o administrador liberar o vínculo.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = data.map(pac => `
+        <div class="item-row">
+          <div>
+            <div class="item-title">${escapeHtml(pac.nome)}</div>
+            <div class="item-sub">
+              Nasc: ${pac.data_nascimento ? formatDate(pac.data_nascimento) : '-'} •
+              Tel: ${escapeHtml(pac.telefone || '-')}
+              ${pac.responsavel ? ' • Resp: ' + escapeHtml(pac.responsavel) : ''}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick='openProntuario(${JSON.stringify(pac)})'>
+            Abrir Prontuário
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function openProntuario(paciente) {
+      selectedPaciente = paciente;
+      document.getElementById('profPacientesSection').classList.add('hidden');
+      document.getElementById('prontuarioSection').classList.remove('hidden');
+
+      document.getElementById('prontuarioPacienteNome').textContent = paciente.nome;
+      document.getElementById('prontuarioPacienteInfo').textContent =
+        `Nascimento: ${paciente.data_nascimento ? formatDate(paciente.data_nascimento) : 'Não informada'} | Telefone: ${paciente.telefone || '-'} | Responsável: ${paciente.responsavel || '-'}`;
+
+      // Define data/hora atual no input
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('atendimentoData').value = now.toISOString().slice(0, 16);
+
+      await loadProntuariosHistory();
+    }
+
+    function closeProntuario() {
+      selectedPaciente = null;
+      document.getElementById('prontuarioSection').classList.add('hidden');
+      document.getElementById('profPacientesSection').classList.remove('hidden');
+    }
+
+    async function loadProntuariosHistory() {
+      const container = document.getElementById('prontuariosTimeline');
+      container.innerHTML = 'Carregando histórico...';
+
+      const { data, error } = await sb
+        .from('prontuarios')
+        .select('*')
+        .eq('paciente_id', selectedPaciente.id)
+        .order('data_atendimento', { ascending: false });
+
+      if (error) {
+        container.innerHTML = '<p class="alert alert-danger">Erro ao carregar evoluções.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="item-sub">Nenhum atendimento registrado para este paciente ainda.</p>';
+        return;
+      }
+
+      container.innerHTML = data.map(item => `
+        <div class="record-box">
+          <div class="record-date">
+            <span>Atendimento em ${formatDateTime(item.data_atendimento)}</span>
+            <span>${escapeHtml(currentProfile.nome)}</span>
+          </div>
+          <div class="record-text">${escapeHtml(item.relatorio)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function handleSaveProntuario(e) {
+      e.preventDefault();
+      if (!selectedPaciente) return;
+
+      const btn = document.getElementById('saveProntuarioBtn');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const data_atendimento = new Date(document.getElementById('atendimentoData').value).toISOString();
+      const relatorio = document.getElementById('atendimentoRelatorio').value.trim();
+
+      const { error } = await sb.from('prontuarios').insert({
+        paciente_id: selectedPaciente.id,
+        profissional_id: currentUser.id,
+        data_atendimento,
+        relatorio
+      });
+
+      btn.disabled = false;
+      btn.textContent = 'Registrar Atendimento';
+
+      if (error) {
+        showAlert('profAlert', 'Erro ao salvar prontuário: ' + error.message, 'danger');
+        return;
+      }
+
+      document.getElementById('atendimentoRelatorio').value = '';
+      showAlert('profAlert', 'Evolução registrada no prontuário!', 'success');
+      await loadProntuariosHistory();
+    }
+
+    // ==================== MODAL DE PACIENTE ====================
+
+    function openNewPacienteModal() {
+      document.getElementById('pacienteModal').classList.remove('hidden');
+    }
+
+    function closeNewPacienteModal() {
+      document.getElementById('pacienteModal').classList.add('hidden');
+    }
+
+    async function handleCreatePaciente(e) {
+      e.preventDefault();
+      const btn = document.getElementById('savePacBtn');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const payload = {
+        nome: document.getElementById('pacNome').value.trim(),
+        data_nascimento: document.getElementById('pacNascimento').value || null,
+        telefone: document.getElementById('pacTelefone').value.trim() || null,
+        responsavel: document.getElementById('pacResponsavel').value.trim() || null,
+        observacoes: document.getElementById('pacObs').value.trim() || null,
+        cadastrado_por: currentUser.id
+      };
+
+      const { error } = await sb.from('pacientes').insert(payload);
+
+      btn.disabled = false;
+      btn.textContent = 'Salvar Paciente';
+
+      if (error) {
+        alert('Erro ao cadastrar paciente: ' + error.message);
+        return;
+      }
+
+      e.target.reset();
+      closeNewPacienteModal();
+
+      if (currentProfile.role === 'ADMIN') {
+        showAlert('adminAlert', 'Paciente cadastrado! Agora você pode vinculá-lo a um profissional na aba Vínculos.', 'success');
+        await loadAdminData();
+      } else {
+        showAlert('profAlert', 'Paciente cadastrado com sucesso! O administrador precisa vincular este paciente ao seu perfil para que ele apareça na sua lista.', 'warning');
+        await loadProfData();
+      }
+    }
+
+    // HELPERS
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function formatDateTime(isoStr) {
+      const dt = new Date(isoStr);
+      return dt.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+  </script>
+</body>
+</html>

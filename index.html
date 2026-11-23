@@ -553,7 +553,7 @@
         Vínculos Paciente ↔ Profissional
       </button>
       <button class="tab-btn" id="adminTabPacientes" onclick="switchAdminTab('pacientes')">
-        Pacientes Cadastrados
+        Pacientes Cadastrados (<span id="pendingPacCount">0</span> pendentes)
       </button>
     </div>
 
@@ -1148,6 +1148,11 @@
     }
 
     function renderAdminPacientes() {
+      const pendentesCount = allPacientes.filter(pac =>
+        !allVinculos.some(v => v.paciente_id === pac.id)
+      ).length;
+      document.getElementById('pendingPacCount').textContent = pendentesCount;
+
       const list = document.getElementById('adminPacientesList');
       if (allPacientes.length === 0) {
         list.innerHTML = '<p class="item-sub">Nenhum paciente cadastrado.</p>';
@@ -1161,11 +1166,15 @@
           const pr = allProfiles.find(p => p.id === v.profissional_id);
           return pr ? pr.nome : '';
         }).filter(Boolean);
+        const semVinculo = nomesProfs.length === 0;
 
         return `
           <div class="item-row">
             <div>
-              <div class="item-title">${escapeHtml(pac.nome)} ${pac.cpf ? `• CPF: ${escapeHtml(pac.cpf)}` : ''}</div>
+              <div class="item-title">
+                ${escapeHtml(pac.nome)} ${pac.cpf ? `• CPF: ${escapeHtml(pac.cpf)}` : ''}
+                ${semVinculo ? `<span class="badge badge-pendente">Sem vínculo</span>` : ''}
+              </div>
               <div class="item-sub">
                 ${formatFiscalSummary(pac)}
               </div>
